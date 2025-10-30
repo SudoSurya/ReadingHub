@@ -1,0 +1,66 @@
+[
+  {
+    "name": "java",
+    "path": "java",
+    "files": [
+      {
+        "name": "01-intro.md",
+        "path": "java/01-intro.md",
+        "title": "Introduction to Java"
+      },
+      {
+        "name": "02-oop.md",
+        "path": "java/02-oop.md",
+        "title": "Object-Oriented Programming in Java"
+      }
+    ]
+  },
+  {
+    "name": "networking",
+    "path": "networking",
+    "files": [
+      {
+        "name": "01-tcp-ip.md",
+        "path": "networking/01-tcp-ip.md",
+        "title": "TCP/IP Fundamentals"
+      },
+      {
+        "name": "02-http.md",
+        "path": "networking/02-http.md",
+        "title": "HTTP Protocol Fundamentals"
+      }
+    ]
+  },
+  {
+    "name": "python",
+    "path": "python",
+    "files": [
+      {
+        "name": "01-basics.md",
+        "path": "python/01-basics.md",
+        "title": "Python Basics"
+      },
+      {
+        "name": "02-data-structures.md",
+        "path": "python/02-data-structures.md",
+        "title": "Python Data Structures"
+      }
+    ]
+  },
+  {
+    "name": "spring-boot",
+    "path": "spring-boot",
+    "files": [
+      {
+        "name": "01-setup.md",
+        "path": "spring-boot/01-setup.md",
+        "title": "Spring Boot Setup and Getting Started"
+      },
+      {
+        "name": "02-rest.md",
+        "path": "spring-boot/02-rest.md",
+        "title": "Building RESTful APIs with Spring Boot"
+      }
+    ]
+  }
+]

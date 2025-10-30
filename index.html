@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="My Reading Hub - Offline Markdown Documentation Viewer">
+    <meta name="theme-color" content="#1f6feb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ReadingHub">
+    <title>My Reading Hub</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="highlight.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="logo">
+            <span class="logo-icon">📚</span>
+            <span class="logo-text">My Reading Hub</span>
+        </div>
+        <div class="header-actions">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search..." class="search-input">
+                <span class="search-icon">🔍</span>
+            </div>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <span class="theme-icon">🌙</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>Topics</h2>
+            </div>
+            <nav class="folder-nav" id="folderNav">
+                <!-- Folders will be populated here -->
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb" id="breadcrumb"></div>
+
+            <!-- File Chips (Desktop) -->
+            <div class="file-chips-container" id="fileChips">
+                <!-- File chips will be populated here -->
+            </div>
+
+            <!-- File Dropdown (Mobile) -->
+            <div class="file-dropdown-container" id="fileDropdownContainer">
+                <select class="file-dropdown" id="fileDropdown">
+                    <option value="">Select a lesson...</option>
+                </select>
+            </div>
+
+            <!-- Search Results Panel -->
+            <div class="search-results-container" id="searchResults">
+                <div class="search-results-header">
+                    <span class="search-results-title">Search Results</span>
+                    <button class="search-close-btn" id="searchCloseBtn">✕</button>
+                </div>
+                <div class="search-results-list" id="searchResultsList">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area" id="contentArea">
+                <div class="welcome-message">
+                    <h1>Welcome to My Reading Hub</h1>
+                    <p>Select a topic from the sidebar to start reading.</p>
+                    <div class="welcome-features">
+                        <div class="feature">
+                            <span class="feature-icon">📖</span>
+                            <span>Rich Markdown Support</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">🔍</span>
+                            <span>Full-Text Search</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">🌓</span>
+                            <span>Dark/Light Mode</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">📱</span>
+                            <span>Fully Responsive</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Bar -->
+            <div class="nav-bar">
+                <button class="nav-btn prev-btn" id="prevBtn" disabled>
+                    <span>← Prev</span>
+                </button>
+                <span class="nav-counter" id="navCounter">0 / 0</span>
+                <button class="nav-btn next-btn" id="nextBtn" disabled>
+                    <span>Next →</span>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Overlay for mobile menu -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Scripts -->
+    <script src="marked.min.js"></script>
+    <script src="highlight.min.js"></script>
+    <script>
+        // ============================================
+        // APP STATE
+        // ============================================
+        const state = {
+            index: null,
+            currentFolder: null,
+            currentFileIndex: 0,
+            currentFiles: [],
+            allFiles: [],
+            filteredFiles: [],
+            searchQuery: ''
+        };
+
+        // ============================================
+        // THEME MANAGEMENT
+        // ============================================
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.className = savedTheme;
+            const icon = document.querySelector('.theme-icon');
+            icon.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.body.className;
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.body.className = newTheme;
+            localStorage.setItem('theme', newTheme);
+            const icon = document.querySelector('.theme-icon');
+            icon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+        }
+
+        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+        // ============================================
+        // SIDEBAR / MENU MANAGEMENT
+        // ============================================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
+        document.getElementById('overlay').addEventListener('click', toggleSidebar);
+
+        // ============================================
+        // DATA LOADING
+        // ============================================
+        async function loadIndex() {
+            try {
+                const response = await fetch('content/index.json');
+                state.index = await response.json();
+                state.allFiles = getAllFiles(state.index);
+                renderFolders();
+            } catch (error) {
+                console.error('Failed to load index:', error);
+                document.getElementById('contentArea').innerHTML = `
+                    <div class="error-message">
+                        <h2>⚠️ Failed to load content</h2>
+                        <p>Please ensure you're running this app from a web server (e.g., <code>npx serve .</code>)</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getAllFiles(index) {
+            const files = [];
+            index.forEach(folder => {
+                folder.files.forEach(file => {
+                    files.push({
+                        ...file,
+                        folderName: folder.name,
+                        folderPath: folder.path
+                    });
+                });
+            });
+            return files;
+        }
+
+        // ============================================
+        // RENDERING
+        // ============================================
+        function renderFolders() {
+            const folderNav = document.getElementById('folderNav');
+            folderNav.innerHTML = '';
+
+            state.index.forEach(folder => {
+                const folderEl = document.createElement('div');
+                folderEl.className = 'folder-item';
+                folderEl.dataset.folder = folder.name;
+                folderEl.innerHTML = `
+                    <span class="folder-icon">📁</span>
+                    <span class="folder-name">${folder.name}</span>
+                    <span class="file-count">${folder.files.length}</span>
+                `;
+                folderEl.addEventListener('click', () => selectFolder(folder.name));
+                folderNav.appendChild(folderEl);
+            });
+        }
+
+        function selectFolder(folderName) {
+            state.currentFolder = folderName;
+            const rawFiles = state.index.find(f => f.name === folderName)?.files || [];
+            // Add folderName to each file
+            state.currentFiles = rawFiles.map(file => ({
+                ...file,
+                folderName: folderName
+            }));
+            state.filteredFiles = [...state.currentFiles];
+            
+            // Reset to first file
+            state.currentFileIndex = 0;
+
+            // Update UI
+            updateActiveFolder(folderName);
+            renderFileChips();
+            if (state.currentFiles.length > 0) {
+                loadFile(state.currentFiles[0].path);
+            }
+            
+            // Close sidebar on mobile
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+
+        function updateActiveFolder(folderName) {
+            document.querySelectorAll('.folder-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.folder === folderName);
+            });
+        }
+
+        function renderFileChips() {
+            const container = document.getElementById('fileChips');
+            container.innerHTML = '';
+
+            // Only show chips if there are more than 1 lessons
+            if (state.filteredFiles.length > 1) {
+                state.filteredFiles.forEach((file, index) => {
+                    const chip = document.createElement('div');
+                    chip.className = 'file-chip';
+                    chip.dataset.index = index;
+                    chip.innerHTML = `<span class="chip-icon">📄</span> ${file.title}`;
+                    chip.addEventListener('click', () => selectFile(index));
+                    container.appendChild(chip);
+                });
+            }
+
+            // Also render dropdown
+            renderFileDropdown();
+        }
+
+        function renderFileDropdown() {
+            const dropdown = document.getElementById('fileDropdown');
+            const container = document.getElementById('fileDropdownContainer');
+            dropdown.innerHTML = '<option value="">Select a lesson...</option>';
+
+            // Only show dropdown if there are more than 1 lessons
+            if (state.filteredFiles.length > 1) {
+                state.filteredFiles.forEach((file, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = file.title;
+                    if (index === state.currentFileIndex) {
+                        option.selected = true;
+                    }
+                    dropdown.appendChild(option);
+                });
+                // Show dropdown - will be handled by CSS on mobile
+                container.style.removeProperty('display');
+            } else {
+                // Hide dropdown if 1 or no lessons
+                container.style.display = 'none';
+            }
+        }
+
+        function updateActiveChip(index) {
+            document.querySelectorAll('.file-chip').forEach((chip, i) => {
+                chip.classList.toggle('active', i === index);
+            });
+            
+            // Also update dropdown
+            const dropdown = document.getElementById('fileDropdown');
+            if (dropdown) {
+                dropdown.value = index;
+            }
+        }
+
+        async function loadFile(filePath) {
+            try {
+                const response = await fetch(`content/${filePath}`);
+                const markdown = await response.text();
+                
+                // Render markdown
+                const html = marked.parse(markdown);
+                document.getElementById('contentArea').innerHTML = html;
+
+                // Highlight code blocks
+                document.querySelectorAll('pre code').forEach(block => {
+                    hljs.highlightElement(block);
+                });
+
+                // Update breadcrumb
+                const file = state.filteredFiles[state.currentFileIndex];
+                updateBreadcrumb(file);
+
+                // Update navigation
+                updateNavButtons();
+                updateActiveChip(state.currentFileIndex);
+
+                // Scroll to top
+                document.getElementById('contentArea').scrollTop = 0;
+            } catch (error) {
+                console.error('Failed to load file:', error);
+                document.getElementById('contentArea').innerHTML = `
+                    <div class="error-message">
+                        <h2>⚠️ Failed to load file</h2>
+                        <p>Could not load: ${filePath}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateBreadcrumb(file) {
+            if (!file) return;
+            const breadcrumb = document.getElementById('breadcrumb');
+            breadcrumb.innerHTML = `
+                <a href="#" class="breadcrumb-link" data-action="home">Home</a>
+                <span class="breadcrumb-separator">></span>
+                <span class="breadcrumb-item">${file.folderName}</span>
+                <span class="breadcrumb-separator">></span>
+                <span class="breadcrumb-item">${file.title}</span>
+            `;
+
+            // Add home link handler
+            breadcrumb.querySelector('[data-action="home"]').addEventListener('click', (e) => {
+                e.preventDefault();
+                showWelcome();
+            });
+        }
+
+        function selectFile(index) {
+            state.currentFileIndex = index;
+            loadFile(state.filteredFiles[index].path);
+        }
+
+        function showWelcome() {
+            state.currentFolder = null;
+            state.currentFileIndex = 0;
+            state.currentFiles = [];
+            state.filteredFiles = [];
+            
+            document.getElementById('contentArea').innerHTML = `
+                <div class="welcome-message">
+                    <h1>Welcome to My Reading Hub</h1>
+                    <p>Select a topic from the sidebar to start reading.</p>
+                    <div class="welcome-features">
+                        <div class="feature">
+                            <span class="feature-icon">📖</span>
+                            <span>Rich Markdown Support</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">🔍</span>
+                            <span>Full-Text Search</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">🌓</span>
+                            <span>Dark/Light Mode</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">📱</span>
+                            <span>Fully Responsive</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            updateActiveFolder(null);
+            document.getElementById('fileChips').innerHTML = '';
+            document.getElementById('breadcrumb').innerHTML = '';
+            updateNavButtons();
+        }
+
+        // ============================================
+        // NAVIGATION
+        // ============================================
+        function updateNavButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const counter = document.getElementById('navCounter');
+
+            const total = state.filteredFiles.length;
+            const current = state.currentFileIndex + 1;
+
+            if (total === 0) {
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                counter.textContent = '0 / 0';
+            } else {
+                prevBtn.disabled = state.currentFileIndex === 0;
+                nextBtn.disabled = state.currentFileIndex === total - 1;
+                counter.textContent = `${current} / ${total}`;
+            }
+        }
+
+        function navigate(direction) {
+            if (!state.filteredFiles.length) return;
+
+            if (direction === 'prev' && state.currentFileIndex > 0) {
+                state.currentFileIndex--;
+                loadFile(state.filteredFiles[state.currentFileIndex].path);
+            } else if (direction === 'next' && state.currentFileIndex < state.filteredFiles.length - 1) {
+                state.currentFileIndex++;
+                loadFile(state.filteredFiles[state.currentFileIndex].path);
+            }
+        }
+
+        document.getElementById('prevBtn').addEventListener('click', () => navigate('prev'));
+        document.getElementById('nextBtn').addEventListener('click', () => navigate('next'));
+
+        // ============================================
+        // KEYBOARD NAVIGATION
+        // ============================================
+        document.addEventListener('keydown', (e) => {
+            // Don't navigate if user is typing in search
+            if (e.target === document.getElementById('searchInput')) return;
+
+            if (e.key === 'ArrowLeft') {
+                navigate('prev');
+            } else if (e.key === 'ArrowRight') {
+                navigate('next');
+            }
+        });
+
+        // ============================================
+        // SEARCH FUNCTIONALITY
+        // ============================================
+        async function performSearch(query) {
+            const resultsPanel = document.getElementById('searchResults');
+            const resultsList = document.getElementById('searchResultsList');
+            
+            if (!query.trim()) {
+                state.searchQuery = '';
+                state.filteredFiles = state.currentFiles;
+                renderFileChips();
+                resultsPanel.classList.remove('active');
+                
+                if (state.currentFiles.length > 0) {
+                    updateNavButtons();
+                }
+                return;
+            }
+
+            state.searchQuery = query.toLowerCase();
+            const searchResults = [];
+
+            // Search in ALL files across all folders
+            for (const folder of state.index) {
+                for (const file of folder.files) {
+                    try {
+                        const response = await fetch(`content/${file.path}`);
+                        const content = await response.text();
+                        if (content.toLowerCase().includes(state.searchQuery)) {
+                            // Extract snippet (context around match)
+                            const snippet = extractSnippet(content, state.searchQuery);
+                            searchResults.push({
+                                ...file,
+                                folderName: folder.name,
+                                snippet: snippet
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error searching in file:', file.path, error);
+                    }
+                }
+            }
+
+            // Display search results
+            displaySearchResults(searchResults);
+            resultsPanel.classList.add('active');
+        }
+
+        function extractSnippet(content, query, contextLength = 100) {
+            const index = content.toLowerCase().indexOf(query.toLowerCase());
+            if (index === -1) return '';
+            
+            const start = Math.max(0, index - contextLength);
+            const end = Math.min(content.length, index + query.length + contextLength);
+            let snippet = content.substring(start, end);
+            
+            // Clean up the snippet
+            snippet = snippet.replace(/\n/g, ' ').trim();
+            if (start > 0) snippet = '...' + snippet;
+            if (end < content.length) snippet = snippet + '...';
+            
+            return snippet;
+        }
+
+        function displaySearchResults(results) {
+            const resultsList = document.getElementById('searchResultsList');
+            
+            if (results.length === 0) {
+                resultsList.innerHTML = `
+                    <div class="search-results-empty">
+                        <div class="search-results-empty-icon">🔍</div>
+                        <div>No results found</div>
+                        <div style="margin-top: 0.5rem; font-size: 0.875rem;">Try different keywords</div>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsList.innerHTML = '';
+            results.forEach((file) => {
+                const item = document.createElement('div');
+                item.className = 'search-result-item';
+                item.innerHTML = `
+                    <div class="search-result-icon">📄</div>
+                    <div class="search-result-content">
+                        <div class="search-result-folder">${file.folderName}</div>
+                        <div class="search-result-title">${file.title}</div>
+                        <div class="search-result-path">${file.path}</div>
+                        ${file.snippet ? `<div class="search-result-snippet">${escapeHtml(file.snippet)}</div>` : ''}
+                    </div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    // Open the file
+                    selectFolderFromSearch(file.folderName, file.path);
+                });
+                
+                resultsList.appendChild(item);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function selectFolderFromSearch(folderName, filePath) {
+            // Close search results
+            document.getElementById('searchResults').classList.remove('active');
+            
+            // Clear search
+            document.getElementById('searchInput').value = '';
+            
+            // Select folder and file
+            selectFolder(folderName);
+            
+            // Find and select the file
+            setTimeout(() => {
+                const folderData = state.index.find(f => f.name === folderName);
+                if (folderData) {
+                    const fileIndex = folderData.files.findIndex(f => f.path === filePath);
+                    if (fileIndex !== -1) {
+                        selectFile(fileIndex);
+                    }
+                }
+            }, 100);
+        }
+
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performSearch(e.target.value);
+            }, 300);
+        });
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        
+        // Setup dropdown change handler
+        document.getElementById('fileDropdown').addEventListener('change', (e) => {
+            const index = parseInt(e.target.value);
+            if (!isNaN(index)) {
+                selectFile(index);
+            }
+        });
+        
+        // Setup search close button
+        document.getElementById('searchCloseBtn').addEventListener('click', () => {
+            document.getElementById('searchResults').classList.remove('active');
+            document.getElementById('searchInput').value = '';
+            performSearch('');
+        });
+        
+        initTheme();
+        loadIndex();
+        
+        // ============================================
+        // PWA SERVICE WORKER REGISTRATION
+        // ============================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker registered:', registration);
+                    })
+                    .catch((error) => {
+                        console.log('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
+
