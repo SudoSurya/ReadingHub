@@ -620,11 +620,16 @@
                 if (first) first.focus();
             }
 
-            function closeCustomDropdown() {
+            function closeCustomDropdown(keepFocus = false) {
                 if (!menu) return;
                 menu.hidden = true;
                 toggle.setAttribute('aria-expanded', 'false');
-                toggle.focus();
+                if (keepFocus && toggle) {
+                    toggle.focus();
+                } else if (!keepFocus && toggle) {
+                    // remove focus so the toggle does not show a focus ring after outside clicks (mobile/touch)
+                    try { toggle.blur(); } catch (e) { /* ignore */ }
+                }
             }
 
             // expose helpers globally so other functions (renderers) can close the dropdown
@@ -636,7 +641,8 @@
                 toggle.addEventListener('click', (e) => {
                     const expanded = toggle.getAttribute('aria-expanded') === 'true';
                     if (expanded) {
-                        closeCustomDropdown();
+                        // User clicked the toggle to close; keep focus on the toggle for accessibility
+                        closeCustomDropdown(true);
                     } else {
                         openCustomDropdown();
                     }
@@ -648,7 +654,8 @@
                 const target = e.target;
                 if (!menu || !toggle) return;
                 if (!menu.contains(target) && !toggle.contains(target)) {
-                    closeCustomDropdown();
+                    // Close without focusing the toggle (click came from outside, e.g., search icon)
+                    closeCustomDropdown(false);
                 }
             });
 
@@ -673,6 +680,20 @@
             }
         })();
         
+        // Make search icon clickable (focus input / trigger search) — helps on mobile where users tap the icon
+        (function setupSearchIcon() {
+            const icon = document.querySelector('.search-icon');
+            const input = document.getElementById('searchInput');
+            if (!icon || !input) return;
+            icon.addEventListener('click', () => {
+                input.focus();
+                // If there's already text, run search immediately
+                if (input.value && input.value.trim()) {
+                    performSearch(input.value);
+                    document.getElementById('searchResults').classList.add('active');
+                }
+            });
+        })();
         // Setup search close button
         document.getElementById('searchCloseBtn').addEventListener('click', () => {
             document.getElementById('searchResults').classList.remove('active');

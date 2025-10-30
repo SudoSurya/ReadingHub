@@ -150,7 +150,8 @@ body {
 .search-icon {
     position: absolute;
     left: 0.5rem;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 .theme-toggle {
@@ -349,6 +350,18 @@ body {
     color: var(--text-primary);
     font-size: 0.875rem;
     cursor: pointer;
+}
+
+/* Prefer showing focus styles only to keyboard users. Hide the focus ring for mouse/touch */
+.custom-dropdown-toggle:focus {
+    outline: none;
+}
+
+.custom-dropdown-toggle:focus-visible {
+    /* subtle focus ring for keyboard users */
+    box-shadow: 0 0 0 4px rgba(31, 111, 235, 0.12);
+    border-color: var(--border-hover);
+    outline: none;
 }
 
 .dropdown-caret {
