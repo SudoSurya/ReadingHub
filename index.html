@@ -54,7 +54,6 @@
         <!-- Main Content Area -->
         <main class="main-content">
             <!-- Breadcrumb -->
-            <div class="breadcrumb" id="breadcrumb"></div>
 
             <!-- File Chips (Desktop) -->
             <div class="file-chips-container" id="fileChips">
@@ -332,7 +331,7 @@
 
                 // Update breadcrumb
                 const file = state.filteredFiles[state.currentFileIndex];
-                updateBreadcrumb(file);
+                // updateBreadcrumb(file);
 
                 // Update navigation
                 updateNavButtons();
@@ -354,13 +353,7 @@
         function updateBreadcrumb(file) {
             if (!file) return;
             const breadcrumb = document.getElementById('breadcrumb');
-            breadcrumb.innerHTML = `
-                <a href="#" class="breadcrumb-link" data-action="home">Home</a>
-                <span class="breadcrumb-separator">></span>
-                <span class="breadcrumb-item">${file.folderName}</span>
-                <span class="breadcrumb-separator">></span>
-                <span class="breadcrumb-item">${file.title}</span>
-            `;
+            breadcrumb.innerHTML = ``;
 
             // Add home link handler
             breadcrumb.querySelector('[data-action="home"]').addEventListener('click', (e) => {
