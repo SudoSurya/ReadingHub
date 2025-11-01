@@ -104,16 +104,6 @@
                 </div>
             </div>
 
-            <!-- Navigation Bar -->
-            <div class="nav-bar">
-                <button class="nav-btn prev-btn" id="prevBtn" disabled>
-                    <span>← Prev</span>
-                </button>
-                <span class="nav-counter" id="navCounter">0 / 0</span>
-                <button class="nav-btn next-btn" id="nextBtn" disabled>
-                    <span>Next →</span>
-                </button>
-            </div>
         </main>
     </div>
 
@@ -130,7 +120,6 @@
         const state = {
             index: null,
             currentFolder: null,
-            currentFileIndex: 0,
             currentFiles: [],
             allFiles: [],
             filteredFiles: [],
@@ -364,12 +353,7 @@
                     hljs.highlightElement(block);
                 });
 
-                // Update breadcrumb
-                const file = state.filteredFiles[state.currentFileIndex];
-                // updateBreadcrumb(file);
-
-                // Update navigation
-                updateNavButtons();
+                // Update UI
                 updateActiveChip(state.currentFileIndex);
 
                 // Scroll to top
@@ -436,59 +420,9 @@
             updateActiveFolder(null);
             document.getElementById('fileChips').innerHTML = '';
             document.getElementById('breadcrumb').innerHTML = '';
-            updateNavButtons();
         }
 
-        // ============================================
-        // NAVIGATION
-        // ============================================
-        function updateNavButtons() {
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const counter = document.getElementById('navCounter');
-
-            const total = state.filteredFiles.length;
-            const current = state.currentFileIndex + 1;
-
-            if (total === 0) {
-                prevBtn.disabled = true;
-                nextBtn.disabled = true;
-                counter.textContent = '0 / 0';
-            } else {
-                prevBtn.disabled = state.currentFileIndex === 0;
-                nextBtn.disabled = state.currentFileIndex === total - 1;
-                counter.textContent = `${current} / ${total}`;
-            }
-        }
-
-        function navigate(direction) {
-            if (!state.filteredFiles.length) return;
-
-            if (direction === 'prev' && state.currentFileIndex > 0) {
-                state.currentFileIndex--;
-                loadFile(state.filteredFiles[state.currentFileIndex].path);
-            } else if (direction === 'next' && state.currentFileIndex < state.filteredFiles.length - 1) {
-                state.currentFileIndex++;
-                loadFile(state.filteredFiles[state.currentFileIndex].path);
-            }
-        }
-
-        document.getElementById('prevBtn').addEventListener('click', () => navigate('prev'));
-        document.getElementById('nextBtn').addEventListener('click', () => navigate('next'));
-
-        // ============================================
-        // KEYBOARD NAVIGATION
-        // ============================================
-        document.addEventListener('keydown', (e) => {
-            // Don't navigate if user is typing in search
-            if (e.target === document.getElementById('searchInput')) return;
-
-            if (e.key === 'ArrowLeft') {
-                navigate('prev');
-            } else if (e.key === 'ArrowRight') {
-                navigate('next');
-            }
-        });
+        // Navigation removed
 
         // ============================================
         // SEARCH FUNCTIONALITY
@@ -502,10 +436,6 @@
                 state.filteredFiles = state.currentFiles;
                 renderFileChips();
                 resultsPanel.classList.remove('active');
-                
-                if (state.currentFiles.length > 0) {
-                    updateNavButtons();
-                }
                 return;
             }
 
@@ -632,10 +562,17 @@
         // ============================================
         
         // Setup dropdown change handler
-        document.getElementById('fileDropdown').addEventListener('change', (e) => {
+        const fileDropdown = document.getElementById('fileDropdown');
+        fileDropdown.addEventListener('change', (e) => {
             const index = parseInt(e.target.value);
             if (!isNaN(index)) {
                 selectFile(index);
+                // Add class so CSS can style the select as 'selected' and avoid native blue tint
+                fileDropdown.classList.add('has-selection');
+                // Remove focus to reduce native highlighted state on some mobile browsers
+                fileDropdown.blur();
+            } else {
+                fileDropdown.classList.remove('has-selection');
             }
         });
         

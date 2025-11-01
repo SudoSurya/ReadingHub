@@ -366,6 +366,59 @@ body {
         padding-top: 0.875rem;
         padding-bottom: 0.875rem;
     }
+
+    /* Style the mobile lesson dropdown to look custom and remove native blue selection */
+    .file-dropdown-container {
+        padding: 0.75rem 1rem;
+        border-top: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+    }
+
+    .file-dropdown {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        width: 100%;
+        padding: 0.65rem 1rem;
+        padding-right: 3rem; /* space for arrow */
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        background-color: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background-image: linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%), linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%), linear-gradient(to right, transparent, transparent);
+        background-position: calc(100% - 18px) calc(1.15rem), calc(100% - 12px) calc(1.15rem), 100% 0;
+        background-size: 6px 6px, 6px 6px, 1px 1px;
+        background-repeat: no-repeat;
+        -webkit-tap-highlight-color: transparent;
+        transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .file-dropdown:focus {
+        outline: none;
+        border-color: var(--border-hover);
+        box-shadow: 0 0 0 3px rgba(31,111,235,0.08);
+        color: var(--text-primary);
+    }
+
+    /* When a selection is made, apply a stable style to avoid OS blue tint */
+    .file-dropdown.has-selection {
+        color: var(--text-primary);
+        background-color: var(--bg-tertiary);
+        border-color: var(--border-color);
+    }
+
+    /* Try to style option backgrounds (works in many desktop browsers) */
+    .file-dropdown option {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    .file-dropdown option:checked,
+    .file-dropdown option[selected] {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
 }
 
 .main-content {
@@ -707,46 +760,8 @@ body {
     }
 }
 
-.nav-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 2rem;
-    background-color: var(--bg-secondary);
-    border-top: 1px solid var(--border-color);
-}
-
-.nav-btn {
-    background-color: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    color: var(--text-primary);
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-}
-
-.nav-btn:hover:not(:disabled) {
-    background-color: var(--bg-hover);
-    color: white;
-    border-color: var(--bg-hover);
-}
-
-.nav-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.nav-counter {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
 /* ============================================
    Welcome & Error Messages
-   ============================================ */
 .welcome-message,
 .error-message {
     max-width: 800px;
@@ -1033,16 +1048,6 @@ body {
     .content-area code {
         font-size: 0.9375rem;  /* Slightly larger for readability */
         padding: 0.25rem 0.5rem;
-    }
-
-    .nav-bar {
-        padding: 1rem;
-    }
-
-    .nav-btn {
-        padding: 12px 16px;  /* Larger touch target */
-        min-width: 90px;  /* Ensure enough space for text */
-        height: 44px;  /* Consistent height */
     }
 
     .welcome-features {
