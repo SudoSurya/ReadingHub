@@ -209,24 +209,52 @@
         // RENDERING
         // ============================================
         function renderFolders() {
-            const folderNav = document.getElementById('folderNav');
-            folderNav.innerHTML = '';
+            const nav = document.getElementById('folderNav');
+            nav.innerHTML = '';  // Clear existing content
 
+            // Render only capitalized folder names with lesson count
             state.index.forEach(folder => {
-                const folderEl = document.createElement('div');
-                folderEl.className = 'folder-item';
-                folderEl.dataset.folder = folder.name;
-                folderEl.innerHTML = `
-                    <span class="folder-icon">📁</span>
-                    <span class="folder-name">${folder.name}</span>
-                    <span class="file-count">${folder.files.length}</span>
+                const safeName = String(folder.name || '');
+                const count = Array.isArray(folder.files) ? folder.files.length : 0;
+                const folderHTML = `
+                    <div class="folder-wrapper" data-folder="${safeName}">
+                        <div class="folder-item" role="button" tabindex="0">
+                            <div class="folder-name">${safeName.toUpperCase()}</div>
+                            <div class="file-count">${count}</div>
+                        </div>
+                    </div>
                 `;
-                folderEl.addEventListener('click', () => selectFolder(folder.name));
-                folderNav.appendChild(folderEl);
+                nav.insertAdjacentHTML('beforeend', folderHTML);
+            });
+
+            // Clicking a folder selects it (loads first lesson) but we do not show lesson names
+            document.querySelectorAll('.folder-item').forEach((item, index) => {
+                const folderName = state.index[index]?.name;
+                item.addEventListener('click', (e) => {
+                    if (!folderName) return;
+                    // Select folder and load first file if present
+                    selectFolder(folderName, true, 0);
+                    // Close sidebar on mobile
+                    if (window.innerWidth <= 768) toggleSidebar();
+                });
+
+                // keyboard accessibility (Enter/Space)
+                item.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        item.click();
+                    }
+                });
             });
         }
 
-        function selectFolder(folderName) {
+        function updateActiveFile(index) {
+            document.querySelectorAll('.file-item').forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+            });
+        }
+
+        function selectFolder(folderName, loadFirstFile = true, fileIndex = 0) {
             state.currentFolder = folderName;
             const rawFiles = state.index.find(f => f.name === folderName)?.files || [];
             // Add folderName to each file
@@ -236,26 +264,33 @@
             }));
             state.filteredFiles = [...state.currentFiles];
             
-            // Reset to first file
-            state.currentFileIndex = 0;
+            // Set file index
+            state.currentFileIndex = fileIndex;
 
             // Update UI
             updateActiveFolder(folderName);
             renderFileChips();
-            if (state.currentFiles.length > 0) {
-                loadFile(state.currentFiles[0].path);
+            
+            if (loadFirstFile && state.currentFiles.length > 0) {
+                loadFile(state.currentFiles[fileIndex].path);
             }
             
-            // Close sidebar on mobile
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
+            // Handle mobile view
+            if (window.innerWidth <= 768) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('overlay');
+                // Only close sidebar when a file is selected
+                if (loadFirstFile) {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                }
+            }
         }
 
         function updateActiveFolder(folderName) {
-            document.querySelectorAll('.folder-item').forEach(item => {
-                item.classList.toggle('active', item.dataset.folder === folderName);
+            document.querySelectorAll('.folder-wrapper').forEach(wrapper => {
+                const folderItem = wrapper.querySelector('.folder-item');
+                folderItem.classList.toggle('active', wrapper.dataset.folder === folderName);
             });
         }
 
