@@ -1,0 +1,11 @@
+{
+  "name": "readinghub",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node generate-index.js"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

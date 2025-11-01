@@ -14,6 +14,8 @@ A standalone, pure JavaScript web application for reading Markdown documentation
 - 📲 **Progressive Web App (PWA)** - Install on mobile/desktop, works offline
 - 🎯 **Native Feel** - Standalone app experience with app icons
 - 🔄 **Service Worker** - Automatic caching and offline support
+ - 📦 **Offline-First** - All assets loaded locally, works without internet (note: runtime caching is disabled)
+ - 📲 **Progressive Web App (PWA)** - Installable, but service worker caching is disabled by default
 
 ## 🚀 Quick Start
 
@@ -163,13 +165,11 @@ The layout uses flexbox and is fully responsive:
 2. Or go to browser menu → **Install My Reading Hub**
 3. The app opens in a standalone window
 
-### PWA Features
+### PWA Notes
 
-- ✅ Works offline after first visit
-- ✅ Standalone window (no browser UI)
-- ✅ App icon on home screen/launcher
-- ✅ Fast loading with caching
-- ✅ Full screen on mobile
+- ⚠️ Service worker caching removed: the app will not cache runtime assets. The page attempts to unregister any previously installed service worker on load to prevent offline caching.
+- ✅ Standalone window (no browser UI) still supported where the browser allows installation
+- ✅ App icon on home screen/launcher still available via `manifest.json`
 
 ## 🚢 Deployment
 

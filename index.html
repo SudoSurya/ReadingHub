@@ -615,17 +615,21 @@
         loadIndex();
         
         // ============================================
-        // PWA SERVICE WORKER REGISTRATION
+        // PWA SERVICE WORKER: UNREGISTER (no caching)
         // ============================================
+        // To ensure no caching occurs, attempt to unregister any previously
+        // installed service workers instead of registering a new one.
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then((registration) => {
-                        console.log('✅ Service Worker registered:', registration);
-                    })
-                    .catch((error) => {
-                        console.log('❌ Service Worker registration failed:', error);
-                    });
+            window.addEventListener('load', async () => {
+                try {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    for (const reg of regs) {
+                        await reg.unregister();
+                        console.log('⚠️ Unregistered service worker:', reg);
+                    }
+                } catch (err) {
+                    console.log('Error while unregistering service workers:', err);
+                }
             });
         }
     </script>
