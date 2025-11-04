@@ -88,6 +88,17 @@
     ]
   },
   {
+    "name": "selenium",
+    "path": "selenium",
+    "files": [
+      {
+        "name": "1.Basics.md",
+        "path": "selenium/1.Basics.md",
+        "title": "What is Selenium?"
+      }
+    ]
+  },
+  {
     "name": "spring-boot",
     "path": "spring-boot",
     "files": [
